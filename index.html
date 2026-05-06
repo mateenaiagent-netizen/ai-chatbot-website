@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mateen AI Assistant</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <a
+    class="fiverr-button"
+    href="https://www.fiverr.com/mateenchatbot/buying?source=avatar_menu_profile"
+    target="_blank"
+    rel="noopener noreferrer"
+    onclick="window.open(this.href, '_blank', 'noopener,noreferrer'); return false;"
+    aria-label="Hire Mateen AI Assistant services on Fiverr"
+  >
+    Hire me on Fiverr
+  </a>
+
+  <main class="page-shell">
+    <section class="intro-panel" aria-label="AI chatbot overview">
+      <p class="eyebrow">AI Chatbot Service</p>
+      <h1>Mateen AI Assistant</h1>
+      <p class="intro-copy">
+        Fast, friendly chatbot experiences for websites, support, and lead capture.
+      </p>
+
+      <form class="lead-form" id="leadForm">
+        <div class="lead-form-heading">
+          <h2>Request a chatbot demo</h2>
+          <p>Send your details and I will contact you with the next step.</p>
+        </div>
+
+        <label for="leadName">Name</label>
+        <input
+          type="text"
+          id="leadName"
+          name="name"
+          placeholder="Your name"
+          autocomplete="name"
+          required
+        >
+
+        <label for="leadEmail">Email</label>
+        <input
+          type="email"
+          id="leadEmail"
+          name="email"
+          placeholder="you@example.com"
+          autocomplete="email"
+          required
+        >
+
+        <label for="leadMessage">Message</label>
+        <textarea
+          id="leadMessage"
+          name="message"
+          placeholder="Tell me what chatbot you need..."
+          rows="4"
+          required
+        ></textarea>
+
+        <button type="submit" id="leadSubmitButton">
+          Send Lead
+        </button>
+
+        <p class="lead-status" id="leadStatus" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <div class="chat-container">
+
+      <div class="chat-header">
+        <div class="header-copy">
+          <h2>Mateen AI Assistant</h2>
+          <p><span class="status-dot"></span>Online - Ready to help</p>
+        </div>
+
+        <div class="bot-avatar" aria-hidden="true">AI</div>
+      </div>
+
+      <div class="chat-box" id="chatBox">
+
+        <div class="bot-message">
+          Hi! I’m Mateen AI Assistant. How can I help you today?
+        </div>
+
+      </div>
+
+      <div class="input-area">
+
+        <input
+          type="text"
+          id="userInput"
+          placeholder="Ask me anything..."
+        >
+
+        <button onclick="sendMessage()">
+          Send
+        </button>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+
+</body>
+</html>
