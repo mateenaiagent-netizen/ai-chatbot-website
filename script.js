@@ -1,17 +1,10 @@
-// The real n8n webhook URL is stored privately in server.js with:
-// const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || "YOUR_WEBHOOK_HERE";
-// The browser sends lead data to this local backend route instead of exposing the webhook URL.
-const LEAD_API_URL = "/lead";
-
 async function sendMessage() {
   const input = document.getElementById("userInput");
   const chatBox = document.getElementById("chatBox");
-
   const message = input.value.trim();
 
   if (message === "") return;
 
-  // User Message
   const userMsg = document.createElement("div");
   userMsg.className = "user-message";
   userMsg.innerText = message;
@@ -19,7 +12,6 @@ async function sendMessage() {
 
   input.value = "";
 
-  // Typing Message
   const typing = document.createElement("div");
   typing.className = "bot-message typing-message";
   typing.innerHTML = `
@@ -30,7 +22,6 @@ async function sendMessage() {
     </div>
   `;
   chatBox.appendChild(typing);
-
   chatBox.scrollTop = chatBox.scrollHeight;
 
   try {
@@ -42,16 +33,17 @@ async function sendMessage() {
       body: JSON.stringify({ message })
     });
 
-    const data = await response.json();
+    const data = await safeReadResponse(response);
+
+    if (!response.ok) {
+      throw new Error(data.message || data.error || "Chat request failed.");
+    }
 
     typing.remove();
-
     addBotMessage(data.reply || "I could not read that response.");
-
   } catch (error) {
-
+    console.error("Chat request error:", error);
     typing.remove();
-
     addBotMessage("Error: Server not connected.");
   }
 
@@ -65,15 +57,16 @@ async function submitLeadForm(event) {
   const submitButton = document.getElementById("leadSubmitButton");
   const formData = new FormData(form);
 
-  // Collect the exact fields your n8n workflow expects.
   const leadData = {
     name: String(formData.get("name") || "").trim(),
     email: String(formData.get("email") || "").trim(),
     message: String(formData.get("message") || "").trim()
   };
 
-  if (!leadData.name || !leadData.email || !leadData.message) {
-    showLeadStatus("Please fill in all fields.", "error");
+  const validationError = validateLeadData(leadData);
+
+  if (validationError) {
+    showLeadStatus(validationError, "error");
     return;
   }
 
@@ -82,30 +75,96 @@ async function submitLeadForm(event) {
   showLeadStatus("", "");
 
   try {
-    // Send lead information to the Express backend.
-    // The backend forwards this JSON to your n8n Production Webhook.
-    const response = await fetch(LEAD_API_URL, {
+    const response = await fetch(getLeadUrl(), {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Accept": "application/json"
       },
       body: JSON.stringify(leadData)
     });
 
-    const data = await response.json();
+    const data = await safeReadResponse(response);
 
     if (!response.ok) {
-      throw new Error(data.error || "Lead request failed");
+      console.error("Lead API failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        response: data
+      });
+
+      throw new Error(data.message || data.error || "Webhook request failed. Please try again.");
     }
 
     form.reset();
     showLeadStatus(data.message || "Lead submitted successfully", "success");
   } catch (error) {
+    console.error("Lead form submission error:", error);
     showLeadStatus(error.message || "Sorry, the lead form failed. Please try again.", "error");
   } finally {
     submitButton.disabled = false;
     submitButton.innerText = "Send Lead";
   }
+}
+
+async function safeReadResponse(response) {
+  const contentType = response.headers.get("content-type") || "";
+  const rawText = await response.text();
+
+  if (!rawText) {
+    return {};
+  }
+
+  if (contentType.includes("application/json")) {
+    try {
+      return JSON.parse(rawText);
+    } catch (error) {
+      console.error("Response said JSON but could not be parsed:", rawText);
+      return {
+        error: "Invalid JSON response from server.",
+        raw: rawText
+      };
+    }
+  }
+
+  try {
+    return JSON.parse(rawText);
+  } catch (error) {
+    console.error("Non-JSON response received:", rawText);
+    return {
+      error: "Server returned a non-JSON response.",
+      message: makeFriendlyHtmlError(rawText),
+      raw: rawText
+    };
+  }
+}
+
+function makeFriendlyHtmlError(rawText) {
+  if (rawText.includes("The page could not be found") || rawText.includes("Cannot GET")) {
+    return "Webhook endpoint was not found. Check that your n8n Production Webhook URL is correct.";
+  }
+
+  return "Server returned an unexpected response. Please check the console for details.";
+}
+
+function validateLeadData(leadData) {
+  if (!leadData.name) {
+    return "Please enter your name.";
+  }
+
+  if (!leadData.email) {
+    return "Please enter your email.";
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leadData.email)) {
+    return "Please enter a valid email address.";
+  }
+
+  if (!leadData.message) {
+    return "Please enter your message.";
+  }
+
+  return "";
 }
 
 function showLeadStatus(message, type) {
@@ -129,6 +188,14 @@ function getChatUrl() {
   }
 
   return "/chat";
+}
+
+function getLeadUrl() {
+  if (window.location.hostname.includes("vercel.app")) {
+    return "/api/lead";
+  }
+
+  return "/lead";
 }
 
 function addBotMessage(text) {
@@ -157,15 +224,11 @@ function typeMessage(element, text) {
   }, 18);
 }
 
-// Enter key support
 document.getElementById("userInput").addEventListener("keypress", function (e) {
   if (e.key === "Enter") {
     sendMessage();
   }
 });
 
-// Lead form support for sending Name, Email, and Message to n8n.
 document.getElementById("leadForm").addEventListener("submit", submitLeadForm);
-
-// Focus input automatically
 document.getElementById("userInput").focus();

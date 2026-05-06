@@ -16,6 +16,10 @@
     {
       "src": "api/chat.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/lead.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -26,6 +30,14 @@
     {
       "src": "/api/chat",
       "dest": "/api/chat.js"
+    },
+    {
+      "src": "/lead",
+      "dest": "/api/lead.js"
+    },
+    {
+      "src": "/api/lead",
+      "dest": "/api/lead.js"
     },
     {
       "src": "/style.css",
